@@ -6,9 +6,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using UpcomingMeetings.Model;
-using System.Runtime.InteropServices;
 using ThreadTask = System.Threading.Tasks.Task;
-using System.Windows.Interop;
 
 namespace UpcomingMeetings
 {

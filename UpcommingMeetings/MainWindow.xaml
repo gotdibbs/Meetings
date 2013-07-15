@@ -30,7 +30,6 @@
         <StackPanel>
             <Grid x:Name="Settings" Visibility="Visible">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="10" />
                 </Grid.ColumnDefinitions>
@@ -39,34 +38,43 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Padding="10" 
+                <TextBlock Padding="10,10,10,5" 
                            FontWeight="Bold"
                            Grid.Row="0"
                            Grid.Column="0"
-                           Text="Email:" />
+                           Text="Email" />
                 
                 <TextBox x:Name="Email" 
-                         Margin="0,5,0,5"
-                         Grid.Row="0"
-                         Grid.Column="1"/>
+                         Margin="10,0,0,5"
+                         Grid.Row="1"
+                         Grid.Column="0"/>
 
-                <TextBlock Padding="10" 
+                <TextBlock Padding="10,10,10,5" 
                            FontWeight="Bold"
-                           Grid.Row="1"
+                           Grid.Row="2"
                            Grid.Column="0"
-                           Text="Exchange Version:" />
+                           Text="Exchange Version" />
 
                 <ComboBox x:Name="Exchange"
-                          Margin="0,5,0,5"
-                          Grid.Row="1"
-                          Grid.Column="1" />
+                          Margin="10,0,0,5"
+                          Grid.Row="3"
+                          Grid.Column="0" />
+                
+                <CheckBox x:Name="OpenWithIE"
+                          Content="Open links in Internet Explorer"
+                          Margin="10,10,0,5"
+                          Grid.Row="4"
+                          Grid.Column="0" />
 
                 <Separator Background="#024C9B"
                             Margin="10,10,10,0"
-                            Grid.Row="2"
-                            Grid.ColumnSpan="3"/>
+                            Grid.Row="5"
+                            Grid.ColumnSpan="2"/>
 
                 <Button x:Name="SaveSettings"
                         Click="SaveSettings_Click"
@@ -74,8 +82,7 @@
                         Margin="10,10,0,0"
                         Padding="5"
                         FontSize="14"
-                        Grid.Row="3"
-                        Grid.ColumnSpan="2"
+                        Grid.Row="6"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"/>
 
@@ -111,11 +118,15 @@
                                            Grid.Row="0"
                                            Grid.Column="0">Subject:</TextBlock>
                                 <TextBlock TextWrapping="NoWrap" 
-                                           Text="{Binding Subject}" 
                                            TextTrimming="WordEllipsis" 
                                            Width="250"
                                            Grid.Row="0"
-                                           Grid.Column="1"/>
+                                           Grid.Column="1">
+                                    <Hyperlink NavigateUri="{Binding WebClientUrl}"
+                                               RequestNavigate="Hyperlink_RequestNavigate">
+                                        <Run Text="{Binding Subject}" />
+                                    </Hyperlink>
+                                </TextBlock>
 
                                 <TextBlock Padding="0,0,10,0" 
                                            FontWeight="Bold"

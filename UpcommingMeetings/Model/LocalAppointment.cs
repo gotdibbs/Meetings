@@ -11,6 +11,7 @@ namespace UpcomingMeetings.Model
         public string Subject { get; set; }
         public string Location { get; set; }
         public string Uri { get; set; }
+        public string WebClientUrl { get; set; }
 
         public DateTime StartTime { get; set; }
     }

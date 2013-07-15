@@ -2,9 +2,12 @@
 using Microsoft.Exchange.WebServices.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 using UpcomingMeetings.Model;
 using ThreadTask = System.Threading.Tasks.Task;
 
@@ -54,6 +57,7 @@ namespace UpcomingMeetings
                 _service = null;
                 _emailAddress = _settings.Email;
                 _exchangeVersion = _settings.ExchangeVersion;
+                OpenWithIE.IsChecked = _settings.OpenWithIE;
                 Settings.Visibility = System.Windows.Visibility.Collapsed;
                 UpcomingMeetings.Visibility = System.Windows.Visibility.Visible;
                 StartPoll();
@@ -91,11 +95,13 @@ namespace UpcomingMeetings
             // Grab calendar folder
             var calendarFolder = new FolderId(WellKnownFolderName.Calendar);
             // Create calendar view (appointment starting or ending between now and 12 hours from now)
-            var calendarView = new CalendarView(DateTime.Now, DateTime.Now.AddHours(12));
+            var calendarView = new CalendarView(DateTime.Now.AddHours(-12), DateTime.Now.AddHours(12));
 
             // Get Ids of second-class Appointment properties
-            var UCOpenedConferenceID = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.PublicStrings, "UCOpenedConferenceID", MapiPropertyType.String);
-            var OnlineMeetingExternalLink = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.PublicStrings, "OnlineMeetingExternalLink", MapiPropertyType.String);
+            var UCOpenedConferenceID = 
+                new ExtendedPropertyDefinition(DefaultExtendedPropertySet.PublicStrings, "UCOpenedConferenceID", MapiPropertyType.String);
+            var OnlineMeetingExternalLink = 
+                new ExtendedPropertyDefinition(DefaultExtendedPropertySet.PublicStrings, "OnlineMeetingExternalLink", MapiPropertyType.String);
 
             // Definte column set to retrieve from appointment objects
             PropertySet iDPropertySet = new PropertySet(BasePropertySet.FirstClassProperties) { UCOpenedConferenceID };
@@ -129,7 +135,8 @@ namespace UpcomingMeetings
                         Subject = appointment.Subject, 
                         Location = appointment.Location,
                         Uri = lyncMeetingUrl, 
-                        StartTime = appointment.Start 
+                        StartTime = appointment.Start,
+                        WebClientUrl = GetWebClientUrl(appointment)
                     });
                 }
             }
@@ -145,6 +152,59 @@ namespace UpcomingMeetings
             PollForMeetings();
         }
 
+        private string GetWebClientUrl(Appointment item)
+        {
+            // Sample code pulled from: http://msdn.microsoft.com/en-us/library/microsoft.exchange.webservices.data.item.webclientreadformquerystring(v=exchg.80).aspx
+
+            ExchangeServerInfo info;
+            string owaReadAccessUrl = string.Empty;
+
+            // This provides the URL to target Exchange servers with MajorVersion < 15.
+            string owaReadUrl2010 = item.WebClientReadFormQueryString;
+
+            // This provides the partial URL format that is specific to Exchange 2013 and Exchange Online 
+            // where MajorVersion = 15.
+            string owa2013format = "#viewmodel=_y.$Ep&ItemID=";
+
+            // This provides the common URL format for both Exchange 2010 and Exchange 2013.
+            Uri url = _service.Url;
+            string commonUrlFormat = url.Scheme + "://" + url.Host + "/owa/";
+
+            // Encode the EWS identifier. If the WebClientReadFormQueryString is on the client, 
+            // you have the item identifier.
+            string URLencodedItemId = System.Web.HttpUtility.UrlEncode(item.Id.UniqueId, Encoding.UTF8);
+
+            // Identify the service version.
+            if (_service.ServerInfo != null)
+            {
+                info = _service.ServerInfo;
+            }
+            else
+            {
+                throw new ArgumentNullException("Call the service before processing service metadata.");
+            }
+
+            // Process for Exchange 2010. Build the URL based on Exchange 2010 requirements.
+            if (info.MajorVersion == 14)
+            {
+                owaReadAccessUrl = url.Scheme + "://" + url.Host + "/owa/" + owaReadUrl2010;
+            }
+
+            // Process for Exchange 2013. Build the URL based on Exchange 2013 requirements.
+            else if (info.MajorVersion == 15 && info.MinorVersion == 0)
+            {
+                owaReadAccessUrl = url.Scheme + "://" + url.Host + "/owa/" + owa2013format + URLencodedItemId;
+            }
+
+            // Adding this so that if the service gets updated, you will update your code.
+            else
+            {
+                throw new ArgumentOutOfRangeException("Update your code to handle a new service version/");
+            }
+
+            return owaReadAccessUrl;
+        }
+
         #region Event Handlers
 
         /// <summary>
@@ -156,7 +216,22 @@ namespace UpcomingMeetings
         {
             var item = ((Button)sender).DataContext as LocalAppointment;
 
-            System.Diagnostics.Process.Start("conf:sip:" + item.Uri);
+            bool isLync2013 = false;
+
+            var lync2013List = Process.GetProcessesByName("lync");
+            if (lync2013List.Length > 0)
+            {
+                isLync2013 = true;
+            }
+
+            if (!isLync2013 || _settings.OpenWithIE)
+            {
+                Process.Start("iexplore.exe", "-nomerge " + item.Uri);
+            }
+            else
+            {
+                Process.Start("conf:sip:" + item.Uri);
+            }
         }
 
         /// <summary>
@@ -180,6 +255,7 @@ namespace UpcomingMeetings
             _settings.IsSetup = true;
             _settings.Email = Email.Text;
             _settings.ExchangeVersion = (ExchangeVersion)Exchange.SelectedItem;
+            _settings.OpenWithIE = OpenWithIE.IsChecked ?? false;
             _settings.Save();
 
             LoadSettings();
@@ -200,6 +276,7 @@ namespace UpcomingMeetings
             // Default fields to current settings
             Email.Text = _settings.Email;
             Exchange.SelectedItem = _settings.ExchangeVersion;
+            OpenWithIE.IsChecked = _settings.OpenWithIE;
 
             // Unmark as setup and reinitialize app
             _settings.IsSetup = false;
@@ -224,6 +301,18 @@ namespace UpcomingMeetings
             else
             {
                 pin.Content = "pin";
+            }
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            if (_settings.OpenWithIE)
+            {
+                Process.Start("iexplore.exe", e.Uri.ToString());
+            }
+            else
+            {
+                Process.Start(e.Uri.ToString());
             }
         }
 

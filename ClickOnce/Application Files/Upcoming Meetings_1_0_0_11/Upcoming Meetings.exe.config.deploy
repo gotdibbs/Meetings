@@ -16,6 +16,9 @@
             <setting name="IsSetup" serializeAs="String">
                 <value>False</value>
             </setting>
+            <setting name="OpenWithIE" serializeAs="String">
+                <value>False</value>
+            </setting>
         </UpcomingMeetings.Properties.Settings>
     </userSettings>
 </configuration>

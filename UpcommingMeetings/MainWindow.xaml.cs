@@ -95,7 +95,7 @@ namespace UpcomingMeetings
             // Grab calendar folder
             var calendarFolder = new FolderId(WellKnownFolderName.Calendar);
             // Create calendar view (appointment starting or ending between now and 12 hours from now)
-            var calendarView = new CalendarView(DateTime.Now.AddHours(-12), DateTime.Now.AddHours(12));
+            var calendarView = new CalendarView(DateTime.Now, DateTime.Now.AddHours(12));
 
             // Get Ids of second-class Appointment properties
             var UCOpenedConferenceID = 

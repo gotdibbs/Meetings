@@ -1,3 +1,5 @@
+:no_entry: [DEPRECATED] This app was great for a couple months, but then Skype for Business added this functionality as a feature. Therefore, I no longer have use for this app and so my time and efforts have been refocused elsewhere. I'd be happy to transition this repo to someone else if desired, or accept pull requests as needed. Otherwise, this repo will be left active for historical purposes.
+
 Meetings
 ========
 
